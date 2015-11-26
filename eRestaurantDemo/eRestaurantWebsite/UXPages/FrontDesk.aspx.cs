@@ -10,6 +10,7 @@ using eRestaurantSystem.BLL;
 using eRestaurantSystem.DAL.Entities;
 using eRestaurantSystem.DAL.DTOs;
 using eRestaurantSystem.DAL.POCOs;
+using EatIn.UI;
 #endregion
 
 public partial class UXPages_FrontDesk : System.Web.UI.Page
@@ -51,20 +52,43 @@ public partial class UXPages_FrontDesk : System.Web.UI.Page
                 //refresh the gridview
                 SeatingGridView.DataBind();
             },"Customer Seated","New walk-in customer has been saved");
+    }
 
+    protected void ReservationSummaryListView_ItemCommand(object sender, ListViewCommandEventArgs e)
+    {
+        // Check the command name and add the reservation for the specified seats.
+        if (e.CommandName.Equals("Seat"))
+        {
+            MessageUserControl.TryRun(() =>
+            {
+                // Get the data
+                var reservationId = int.Parse(e.CommandArgument.ToString());
+                var selectedItems = new List<byte>();
+                foreach (ListItem item in ReservationTableListBox.Items)
+                {
+                    if (item.Selected)
+                        selectedItems.Add(byte.Parse(item.Text.Replace("Table ", "")));
+                }
+                var when = Mocker.MockDate.Add(Mocker.MockTime);
+                // Seat the reservation customer
+                var controller = new AdminController();
+                controller.SeatCustomer(when, reservationId, selectedItems, int.Parse(WaiterDropDownList.SelectedValue));
+                // Refresh the gridview
+                SeatingGridView.DataBind();
+                ReservationsRepeater.DataBind();
+                ReservationTableListBox.DataBind();
+            }, "Customer Seated", "Reservation customer has arrived and has been seated");
+        }
+    }
 
+    protected bool ShowReservationSeating()
+    {
+        bool showreservations = false;
+        //this method will query the database to show any available seats for reservations
+        AdminController sysmgr = new AdminController();
+        DateTime when = Mocker.MockDate.Add(Mocker.MockTime);
+        showreservations = sysmgr.IsAvailableSeats(when);
 
-
-
-
-
-
-
-
-
-
-
-
-
+        return showreservations;
     }
 }
